@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using UnityEngine;
 
@@ -9,12 +10,15 @@ public class PlayerController : MonoBehaviour
     public float jumpForce;
     public float gravityScale;
     public CharacterController controller;
+    public GameObject dustEffect;
+    public GameObject landingEffect;
 
     private Vector3 moveDirection;
     public float jump2;
     private bool jump3;
     public float jump3Timer;
     public Transform cam;
+    private bool isWallJumping;
 
     //public float jumpTime;
     //private float jumpTimeCounter;
@@ -25,6 +29,7 @@ public class PlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
+        isWallJumping = false;
     }
 
     // Update is called once per frame
@@ -66,6 +71,8 @@ public class PlayerController : MonoBehaviour
             {
                 //isJumping = true;
                 //jumpTimeCounter = jumpTime;
+                Instantiate(dustEffect, transform.position, transform.rotation);
+                FindObjectOfType<AudioManaging>().Play("Jump1");
                 moveDirection.y = jumpForce;
                 jump2 = 0;
             }
@@ -74,6 +81,8 @@ public class PlayerController : MonoBehaviour
             {
                 //isJumping = true;
                 //jumpTimeCounter = jumpTime;
+                Instantiate(dustEffect, transform.position, transform.rotation);
+                FindObjectOfType<AudioManaging>().Play("Jump2");
                 moveDirection.y = jumpForce + 5;
                 jump2 = 0;
                 jump3 = true;
@@ -83,6 +92,8 @@ public class PlayerController : MonoBehaviour
             {
                 //isJumping = true;
                 //jumpTimeCounter = jumpTime;
+                Instantiate(dustEffect, transform.position, transform.rotation);
+                FindObjectOfType<AudioManaging>().Play("Jump3");
                 moveDirection.y = jumpForce + 11;
                 jump2 = 0;
                 jump3 = false;
@@ -99,7 +110,24 @@ public class PlayerController : MonoBehaviour
                     jump3Timer = 0.2f;
                 }
             }
+
+            if (jump2 < 0.1)
+            {
+                Instantiate(landingEffect, transform.position, transform.rotation);
+            }
+
+            if (jump3Timer > 0.1 && jump3Timer < 0.2)
+            {
+                Instantiate(landingEffect, transform.position, transform.rotation);
+            }
         }
+
+        //if (controller.transform.position.y > 2f)
+        //{
+        //    controller.isGrounded;
+        //}
+
+        //if (controller.transform.position.y < 1f)
 
         //if (isJumping && Input.GetKey(KeyCode.Space))
         //{
@@ -120,9 +148,11 @@ public class PlayerController : MonoBehaviour
         //    isJumping = false;
         //}
 
-        moveDirection.y = moveDirection.y + (Physics.gravity.y * gravityScale * Time.deltaTime);
-        controller.Move(moveDirection * Time.deltaTime);
-        print(jump3Timer);
+        if (isWallJumping == false)
+        {
+            moveDirection.y = moveDirection.y + (Physics.gravity.y * gravityScale * Time.deltaTime);
+            controller.Move(moveDirection * Time.deltaTime);
+        }
     }
 
     //WALL JUMP
@@ -130,9 +160,16 @@ public class PlayerController : MonoBehaviour
     {
         if (!controller.isGrounded && hit.normal.y < 0.1f)
         {
+            jump2 = 0;
+            jump3 = false;
+            jump3Timer = 0.2f;
             if (Input.GetButtonDown("Jump"))
             {
-                moveDirection.y = jumpForce;
+                isWallJumping = true;
+                FindObjectOfType<AudioManaging>().Play("Jump2");
+                moveDirection = new Vector3(hit.normal.x * 400, jumpForce, hit.normal.z * 400);
+                controller.Move(moveDirection * Time.deltaTime);
+                isWallJumping = false;
             }
         }
     }
